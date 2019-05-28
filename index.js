@@ -13,10 +13,6 @@ const DEFAULT_PORT = 3000;
 let PEER_PORT;
 const ROOT_NOOD_ADDRESS = `http://localhost:${DEFAULT_PORT}`;
 
-setTimeout(() => {
-  pubsub.broadcastChain();
-}, 1000);
-
 app.use(bodyParser.json());
 
 app.get("/supcoin/blocks", (req, res) => {
@@ -32,7 +28,6 @@ app.post("/supcoin/mineblock", (req, res) => {
 });
 
 const syncNodeChains = () => {
-  console.log("Log: syncNodeChains -> syncNodeChains")
   request(
     { url: `${ROOT_NOOD_ADDRESS}/supcoin/blocks` },
     (error, response, body) => {
@@ -53,5 +48,7 @@ const PORT = PEER_PORT || DEFAULT_PORT;
 
 app.listen(PORT, () => {
   console.info(`Listening on port ${PORT}`);
-  syncNodeChains();
+  if (PORT !== DEFAULT_PORT) {
+    syncNodeChains();
+  }
 });
