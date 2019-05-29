@@ -9,4 +9,6 @@ const GENESIS_DATA = {
   data: []
 };
 
-module.exports = { GENESIS_DATA };
+const INITIAL_BALANCE = 100;
+
+module.exports = { GENESIS_DATA, INITIAL_BALANCE };
