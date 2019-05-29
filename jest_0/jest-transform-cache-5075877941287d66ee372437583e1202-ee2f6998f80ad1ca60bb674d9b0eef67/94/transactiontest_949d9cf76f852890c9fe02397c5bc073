@@ -1,0 +1,19 @@
+791979e74d9a665bc53e7c2d6442f200
+const Transaction = require("../wallet/transaction/index");
+
+const wallet = require("../wallet/index");
+
+describe("Transaction", () => {
+  let transaction, senderWallet, receiver, amount;
+  beforeEach(() => {
+    senderWallet = new wallet();
+    receiver = "receiver-publicKey";
+    amount = 20;
+    transaction = new Transaction({
+      senderWallet,
+      receiver,
+      amount
+    });
+  });
+});
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJzb3VyY2VzIjpbInRyYW5zYWN0aW9uLnRlc3QuanMiXSwibmFtZXMiOlsiVHJhbnNhY3Rpb24iLCJyZXF1aXJlIiwid2FsbGV0IiwiZGVzY3JpYmUiLCJ0cmFuc2FjdGlvbiIsInNlbmRlcldhbGxldCIsInJlY2VpdmVyIiwiYW1vdW50IiwiYmVmb3JlRWFjaCJdLCJtYXBwaW5ncyI6IkFBQUEsTUFBTUEsV0FBVyxHQUFHQyxPQUFPLENBQUMsNkJBQUQsQ0FBM0I7O0FBQ0EsTUFBTUMsTUFBTSxHQUFHRCxPQUFPLENBQUMsaUJBQUQsQ0FBdEI7O0FBRUFFLFFBQVEsQ0FBQyxhQUFELEVBQWdCLE1BQU07QUFDNUIsTUFBSUMsV0FBSixFQUFpQkMsWUFBakIsRUFBK0JDLFFBQS9CLEVBQXlDQyxNQUF6QztBQUVBQyxFQUFBQSxVQUFVLENBQUMsTUFBTTtBQUNmSCxJQUFBQSxZQUFZLEdBQUcsSUFBSUgsTUFBSixFQUFmO0FBQ0FJLElBQUFBLFFBQVEsR0FBRyxvQkFBWDtBQUNBQyxJQUFBQSxNQUFNLEdBQUcsRUFBVDtBQUNBSCxJQUFBQSxXQUFXLEdBQUcsSUFBSUosV0FBSixDQUFnQjtBQUFFSyxNQUFBQSxZQUFGO0FBQWdCQyxNQUFBQSxRQUFoQjtBQUEwQkMsTUFBQUE7QUFBMUIsS0FBaEIsQ0FBZDtBQUNELEdBTFMsQ0FBVjtBQU1ELENBVE8sQ0FBUiIsInNvdXJjZXNDb250ZW50IjpbImNvbnN0IFRyYW5zYWN0aW9uID0gcmVxdWlyZShcIi4uL3dhbGxldC90cmFuc2FjdGlvbi9pbmRleFwiKTtcclxuY29uc3Qgd2FsbGV0ID0gcmVxdWlyZShcIi4uL3dhbGxldC9pbmRleFwiKTtcclxuXHJcbmRlc2NyaWJlKFwiVHJhbnNhY3Rpb25cIiwgKCkgPT4ge1xyXG4gIGxldCB0cmFuc2FjdGlvbiwgc2VuZGVyV2FsbGV0LCByZWNlaXZlciwgYW1vdW50O1xyXG5cclxuICBiZWZvcmVFYWNoKCgpID0+IHtcclxuICAgIHNlbmRlcldhbGxldCA9IG5ldyB3YWxsZXQoKTtcclxuICAgIHJlY2VpdmVyID0gXCJyZWNlaXZlci1wdWJsaWNLZXlcIjtcclxuICAgIGFtb3VudCA9IDIwO1xyXG4gICAgdHJhbnNhY3Rpb24gPSBuZXcgVHJhbnNhY3Rpb24oeyBzZW5kZXJXYWxsZXQsIHJlY2VpdmVyLCBhbW91bnQgfSk7XHJcbiAgfSk7XHJcbn0pO1xyXG4iXX0=

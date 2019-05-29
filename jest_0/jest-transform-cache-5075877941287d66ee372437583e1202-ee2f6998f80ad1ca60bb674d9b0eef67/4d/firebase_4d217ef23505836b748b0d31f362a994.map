@@ -1,0 +1,1 @@
+{"version":3,"sources":["firebase.js"],"names":["config","apiKey","module","exports"],"mappings":"AAAA,MAAMA,MAAM,GAAG;AACbC,EAAAA,MAAM,EAAE;AADK,CAAf;AAIAC,MAAM,CAACC,OAAP,GAAiBH,MAAjB","sourcesContent":["const config = {\r\n  apiKey: \"\"\r\n};\r\n\r\nmodule.exports = config;\r\n"]}

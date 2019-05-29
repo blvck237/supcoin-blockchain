@@ -1,0 +1,1 @@
+{"version":3,"sources":["transaction.test.js"],"names":["Transaction","require","describe"],"mappings":"AAAA,MAAMA,WAAW,GAAGC,OAAO,CAAC,6BAAD,CAA3B;;AAEAC,QAAQ,CAAC,aAAD,EAAgB,MAAI,CAE3B,CAFO,CAAR","sourcesContent":["const Transaction = require(\"../wallet/transaction/index\");\r\n\r\ndescribe(\"Transaction\", ()=>{\r\n    \r\n})"]}

@@ -1,0 +1,1 @@
+{"version":3,"sources":["index.js"],"names":["Transaction","constructor","module","exports"],"mappings":"AAAA,MAAMA,WAAN,CAAkB;AAChBC,EAAAA,WAAW,GAAG,CAAE;;AADA;;AAIlBC,MAAM,CAACC,OAAP,GAAiBH,WAAjB","sourcesContent":["class Transaction {\r\n  constructor() {}\r\n}\r\n\r\nmodule.exports = Transaction;\r\n"]}
