@@ -46,6 +46,12 @@ class Transaction {
     }
     return true;
   }
+
+  update({ senderWallet, receiver, amount }) {
+    this.outputMap[receiver] = amount;
+    this.outputMap[senderWallet.publicKey] -= amount;
+    this.input = this.createInput({ senderWallet, outputMap: this.outputMap })
+  }
 }
 
 module.exports = Transaction;
