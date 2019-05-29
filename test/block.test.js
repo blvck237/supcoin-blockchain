@@ -1,5 +1,5 @@
-const Block = require("../block");
-const cryptoHash = require("../crypto-hash");
+const Block = require("../blockchain/block");
+const { cryptoHash } = require("../utils");
 const { GENESIS_DATA } = require("../config");
 
 describe("Block", () => {
