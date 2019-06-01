@@ -3,11 +3,20 @@ const bodyParser = require("body-parser");
 const request = require("request");
 // Class imports
 const Blockchain = require("./blockchain/index");
-const PubSub = require("./utils/pubsub");
+const PubSub = require("./app/pubsub");
+const TransactionMiner = require("./app/transaction-miner");
+const TransactionPool = require("./wallet/transaction/transactionpool");
+const Wallet = require("./wallet");
 
 const app = express();
+const isDevelopment = process.env.ENV === "development";
+const REDIS_URL = isDevelopment
+  ? "redis://127.0.0.1:6379"
+  : "redis://h:p05f9a274bd0e2414e52cb9516f8cbcead154d7d61502d32d9750180836a7cc05@ec2-34-225-229-4.compute-1.amazonaws.com:19289";
 const blockchain = new Blockchain();
-const pubsub = new PubSub({ blockchain });
+const transactionPool = new TransactionPool();
+const pubsub = new PubSub({ blockchain, transactionPool, redisUrl: REDIS_URL });
+const wallet = new Wallet();
 
 const DEFAULT_PORT = 3000;
 let PEER_PORT;
@@ -27,14 +36,54 @@ app.post("/supcoin/mineblock", (req, res) => {
   res.redirect("/supcoin/blocks");
 });
 
-const syncNodeChains = () => {
+app.post("/supcoin/transact", (req, res) => {
+  const { amount, recipient } = req.body;
+
+  let transaction = transactionPool.existingTransaction({
+    inputAddress: wallet.publicKey
+  });
+
+  try {
+    if (transaction) {
+      transaction.update({ senderWallet: wallet, recipient, amount });
+    } else {
+      transaction = wallet.createTransaction({ recipient, amount });
+    }
+  } catch (error) {
+    return res.status(400).json({ type: "error", message: error.message });
+  }
+
+  transactionPool.setTransaction(transaction);
+  pubsub.broadcastTransaction(transaction);
+  res.json({ type: "success", transaction });
+});
+
+app.get("/supcoin/transaction-pool-map", (req, res) => {
+  res.json(transactionPool.transactionMap);
+});
+
+const syncNodes = () => {
   request(
     { url: `${ROOT_NOOD_ADDRESS}/supcoin/blocks` },
     (error, response, body) => {
       if (!error && response.statusCode === 200) {
         const rootChain = JSON.parse(body);
-        console.log("Log: syncNodeChains -> rootChain", rootChain);
+        console.log("Log: syncNodes -> rootChain", rootChain);
         blockchain.replaceChain(rootChain);
+      }
+    }
+  );
+
+  request(
+    { url: `${ROOT_NOOD_ADDRESS}/supcoin/transaction-pool-map` },
+    (error, response, body) => {
+      if (!error && response.statusCode === 200) {
+        const rootTransactionPoolMap = JSON.parse(body);
+        console.log(
+          "Log: syncNodes -> rootTransactionPoolMap",
+          rootTransactionPoolMap
+        );
+        transactionPool.setMap(rootTransactionPoolMap);
       }
     }
   );
@@ -49,6 +98,6 @@ const PORT = PEER_PORT || DEFAULT_PORT;
 app.listen(PORT, () => {
   console.info(`Listening on port ${PORT}`);
   if (PORT !== DEFAULT_PORT) {
-    syncNodeChains();
+    syncNodes();
   }
 });

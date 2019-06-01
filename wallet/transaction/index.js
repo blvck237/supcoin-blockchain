@@ -15,7 +15,7 @@ class Transaction {
     const outputMap = {};
 
     outputMap[recipient] = amount;
-    outputMap[senderWallet.publicKey] = senderWallet.balance - amount;
+    outputMap[senderWallet.publicKey] = senderWallet.balance - parseInt(amount);
 
     return outputMap;
   }
@@ -47,7 +47,7 @@ class Transaction {
     this.input = this.createInput({ senderWallet, outputMap: this.outputMap });
   }
 
-  static validTransaction(transaction) {
+  static validateTransaction(transaction) {
     const {
       input: { address, amount, signature },
       outputMap
