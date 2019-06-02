@@ -54,9 +54,7 @@ class Wallet {
       }
     }
 
-    return hasConductedTransaction
-      ? outputsTotal
-      : INITIAL_BALANCE + outputsTotal;
+    return hasConductedTransaction ? outputsTotal: INITIAL_BALANCE + outputsTotal;
   }
 }
 

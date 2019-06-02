@@ -17,6 +17,12 @@ const blockchain = new Blockchain();
 const transactionPool = new TransactionPool();
 const pubsub = new PubSub({ blockchain, transactionPool, redisUrl: REDIS_URL });
 const wallet = new Wallet();
+const transactionMiner = new TransactionMiner({
+  blockchain,
+  transactionPool,
+  wallet,
+  pubsub
+});
 
 const DEFAULT_PORT = 3000;
 let PEER_PORT;
@@ -60,6 +66,23 @@ app.post("/supcoin/transact", (req, res) => {
 
 app.get("/supcoin/transaction-pool-map", (req, res) => {
   res.json(transactionPool.transactionMap);
+});
+
+app.get("/supcoin/mine-transaction", (req, res) => {
+  transactionMiner.mineTransactions();
+
+  res.redirect("/supcoin/blocks");
+});
+
+app.get("/supcoin/wallet-info", (req, res) => {
+  const address = wallet.publicKey;
+  res.json({
+    address,
+    balance: Wallet.calculateBalance({
+      chain: blockchain,
+      address
+    })
+  });
 });
 
 const syncNodes = () => {
