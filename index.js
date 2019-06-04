@@ -1,12 +1,17 @@
 const express = require("express");
 const bodyParser = require("body-parser");
 const request = require("request");
+const passport = require("passport");
+// Add the Firebase products that you want to use
+require("firebase/auth");
+require("firebase/firestore");
 // Class imports
 const Blockchain = require("./blockchain/index");
 const PubSub = require("./app/pubsub");
 const TransactionMiner = require("./app/transaction-miner");
 const TransactionPool = require("./wallet/transaction/transactionpool");
 const Wallet = require("./wallet");
+const { facebookProvider, db, firebase } = require("./db/firebase");
 
 const app = express();
 const isDevelopment = process.env.ENV === "development";
@@ -28,6 +33,19 @@ const DEFAULT_PORT = 3000;
 let PEER_PORT;
 const ROOT_NOOD_ADDRESS = `http://localhost:${DEFAULT_PORT}`;
 
+app.use((req, res, next) => {
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader(
+    "Access-Control-Allow-Headers",
+    "Origin, X-Requested-With, Content-Type, Accept"
+  );
+  res.setHeader(
+    "Access-Control-Allow-Methods",
+    "GET, POST, PATCH, PUT, DELETE, OPTIONS"
+  );
+  next();
+});
+
 app.use(bodyParser.json());
 
 app.get("/supcoin/blocks", (req, res) => {
@@ -39,6 +57,7 @@ app.post("/supcoin/mineblock", (req, res) => {
 
   blockchain.addBlock({ data });
   pubsub.broadcastChain();
+  saveChain();
   res.redirect("/supcoin/blocks");
 });
 
@@ -85,6 +104,53 @@ app.get("/supcoin/wallet-info", (req, res) => {
   });
 });
 
+app.get("/supcoin/transactions", (req, res) => {
+  let transactions = [];
+  db.collection("transactions")
+    .get()
+    .then(ref => {
+      ref.docs.map(doc => {
+        transactions.push(doc.data());
+      });
+      console.log("Log: ref", transactions);
+      res.send(transactions);
+    })
+    .catch(err => {
+      console.error(err);
+    });
+});
+
+app.post("/supcoin/login", (req, res) => {
+  const { email, password } = req.body;
+  firebase
+    .auth()
+    .signInWithEmailAndPassword(email, password)
+    .then(user => {
+      console.info("ok");
+      res.json(user);
+    })
+    .catch(err => {
+      res.json(err);
+      console.log("Log: err", err);
+    });
+});
+
+app.get("/supcoin/facebookLogin", (req, res) => {
+  firebase
+    .auth()
+    .signInWithRedirect(facebookProvider)
+    .then(res => {
+      var token = res.credential.accessToken;
+      var user = res.user;
+      console.info(user);
+      res.json(user);
+    })
+    .catch(err => {
+      res.json(err);
+      console.log("Log: err", err);
+    });
+});
+
 const syncNodes = () => {
   request(
     { url: `${ROOT_NOOD_ADDRESS}/supcoin/blocks` },
@@ -102,15 +168,76 @@ const syncNodes = () => {
     (error, response, body) => {
       if (!error && response.statusCode === 200) {
         const rootTransactionPoolMap = JSON.parse(body);
-        console.log(
-          "Log: syncNodes -> rootTransactionPoolMap",
-          rootTransactionPoolMap
-        );
         transactionPool.setMap(rootTransactionPoolMap);
       }
     }
   );
 };
+
+const saveChain = () => {
+  let chain = { ...blockchain.chain };
+  console.log("Log: saveChain -> chain", chain);
+  db.collection(wallet.publicKey)
+    .doc()
+    .set({ chain: JSON.stringify(chain) })
+    .then(() => {
+      console.log("success");
+    })
+    .catch(err => {
+      console.log(err);
+    });
+};
+
+if (isDevelopment) {
+  const walletFoo = new Wallet();
+  const walletBar = new Wallet();
+
+  const generateWalletTransaction = ({ wallet, recipient, amount }) => {
+    const transaction = wallet.createTransaction({
+      recipient,
+      amount,
+      chain: blockchain.chain
+    });
+
+    transactionPool.setTransaction(transaction);
+  };
+
+  const walletAction = () =>
+    generateWalletTransaction({
+      wallet,
+      recipient: walletFoo.publicKey,
+      amount: 5
+    });
+
+  const walletFooAction = () =>
+    generateWalletTransaction({
+      wallet: walletFoo,
+      recipient: walletBar.publicKey,
+      amount: 10
+    });
+
+  const walletBarAction = () =>
+    generateWalletTransaction({
+      wallet: walletBar,
+      recipient: wallet.publicKey,
+      amount: 15
+    });
+
+  for (let i = 0; i < 20; i++) {
+    if (i % 3 === 0) {
+      walletAction();
+      walletFooAction();
+    } else if (i % 3 === 1) {
+      walletAction();
+      walletBarAction();
+    } else {
+      walletFooAction();
+      walletBarAction();
+    }
+
+    transactionMiner.mineTransactions();
+  }
+}
 
 if (process.env.GENERATE_PEER_PORT == "true") {
   PEER_PORT = DEFAULT_PORT + Math.ceil(Math.random() * 1000);

@@ -1,6 +1,5 @@
 const EC = require("elliptic").ec;
 const cryptoHash = require("./crypto-hash");
-const firebase = require("./firebase");
 
 const ec = new EC("secp256k1");
 
@@ -9,4 +8,4 @@ const verifySignature = ({ publicKey, data, signature }) => {
   return keyFromPublic.verify(cryptoHash(data), signature);
 };
 
-module.exports = { ec, verifySignature, cryptoHash, firebase };
+module.exports = { ec, verifySignature, cryptoHash };
