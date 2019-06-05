@@ -1,26 +1,32 @@
 const express = require("express");
 const bodyParser = require("body-parser");
 const request = require("request");
-const passport = require("passport");
+const cors = require("cors");
+const app = express();
+const http = require("http").Server(app);
+const io = require("socket.io")(http, { origins: "*:*" });
+
 // Add the Firebase products that you want to use
 require("firebase/auth");
 require("firebase/firestore");
 // Class imports
 const Blockchain = require("./blockchain/index");
+const Node = require("./nodes");
 const PubSub = require("./app/pubsub");
 const TransactionMiner = require("./app/transaction-miner");
 const TransactionPool = require("./wallet/transaction/transactionpool");
 const Wallet = require("./wallet");
-const { facebookProvider, db, firebase } = require("./db/firebase");
+const { facebookProvider, db, firebase, admin } = require("./db/firebase");
+const { mongoose } = require("./db/mongodb");
 
-const app = express();
 const isDevelopment = process.env.ENV === "development";
 const REDIS_URL = isDevelopment
   ? "redis://127.0.0.1:6379"
   : "redis://h:p05f9a274bd0e2414e52cb9516f8cbcead154d7d61502d32d9750180836a7cc05@ec2-34-225-229-4.compute-1.amazonaws.com:19289";
 const blockchain = new Blockchain();
+const node = new Node();
 const transactionPool = new TransactionPool();
-const pubsub = new PubSub({ blockchain, transactionPool, redisUrl: REDIS_URL });
+const pubsub = new PubSub({ blockchain, transactionPool, nodes: node });
 const wallet = new Wallet();
 const transactionMiner = new TransactionMiner({
   blockchain,
@@ -29,9 +35,19 @@ const transactionMiner = new TransactionMiner({
   pubsub
 });
 
+const onlineNodes = [];
+var nodes = [];
+var connectedNode = {};
+
 const DEFAULT_PORT = 3000;
 let PEER_PORT;
 const ROOT_NOOD_ADDRESS = `http://localhost:${DEFAULT_PORT}`;
+
+if (process.env.GENERATE_PEER_PORT == "true") {
+  PEER_PORT = DEFAULT_PORT + Math.ceil(Math.random() * 1000);
+}
+
+const PORT = PEER_PORT || DEFAULT_PORT;
 
 app.use((req, res, next) => {
   res.setHeader("Access-Control-Allow-Origin", "*");
@@ -85,6 +101,12 @@ app.post("/supcoin/transact", (req, res) => {
 
 app.get("/supcoin/transaction-pool-map", (req, res) => {
   res.json(transactionPool.transactionMap);
+});
+
+app.get("/supcoin/availablenodes", (req, res) => {
+  console.log("Log: nodes");
+
+  res.json( onlineNodes );
 });
 
 app.get("/supcoin/mine-transaction", (req, res) => {
@@ -188,66 +210,52 @@ const saveChain = () => {
     });
 };
 
-if (isDevelopment) {
-  const walletFoo = new Wallet();
-  const walletBar = new Wallet();
+const setNode = () => {
+  getNodes();
+  connectedNode = admin
+    .database()
+    .ref("nodes")
+    .push(PORT);
+  console.log("Log: setNode -> connectedNode", connectedNode.key);
+};
 
-  const generateWalletTransaction = ({ wallet, recipient, amount }) => {
-    const transaction = wallet.createTransaction({
-      recipient,
-      amount,
-      chain: blockchain.chain
+const getNodes = () => {
+  admin
+    .database()
+    .ref("nodes")
+    .on("value", snapshot => {
+      snapshot.forEach(node => {
+        onlineNodes.push(node.val());
+      });
     });
+};
 
-    transactionPool.setTransaction(transaction);
-  };
+const removeNode = () => {
+  admin
+    .database()
+    .ref("nodes")
+    .child(connectedNode.key)
+    .remove();
+};
 
-  const walletAction = () =>
-    generateWalletTransaction({
-      wallet,
-      recipient: walletFoo.publicKey,
-      amount: 5
-    });
+io.set("origins", "*:*");
 
-  const walletFooAction = () =>
-    generateWalletTransaction({
-      wallet: walletFoo,
-      recipient: walletBar.publicKey,
-      amount: 10
-    });
+io.on("connection", socket => {});
 
-  const walletBarAction = () =>
-    generateWalletTransaction({
-      wallet: walletBar,
-      recipient: wallet.publicKey,
-      amount: 15
-    });
+io.on("disconnect", () => {
+  console.log("disconnected");
+});
 
-  for (let i = 0; i < 20; i++) {
-    if (i % 3 === 0) {
-      walletAction();
-      walletFooAction();
-    } else if (i % 3 === 1) {
-      walletAction();
-      walletBarAction();
-    } else {
-      walletFooAction();
-      walletBarAction();
-    }
-
-    transactionMiner.mineTransactions();
-  }
-}
-
-if (process.env.GENERATE_PEER_PORT == "true") {
-  PEER_PORT = DEFAULT_PORT + Math.ceil(Math.random() * 1000);
-}
-
-const PORT = PEER_PORT || DEFAULT_PORT;
-
-app.listen(PORT, () => {
+http.listen(PORT, () => {
   console.info(`Listening on port ${PORT}`);
+  setNode(PORT);
   if (PORT !== DEFAULT_PORT) {
     syncNodes();
   }
+});
+
+process.on("SIGINT", () => {
+  removeNode();
+  // console.log("Log: nodes", node);
+  process.exit();
 });
