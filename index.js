@@ -5,6 +5,7 @@ const cors = require("cors");
 const app = express();
 const http = require("http").Server(app);
 const io = require("socket.io")(http, { origins: "*:*" });
+const _ = require("lodash");
 
 // Add the Firebase products that you want to use
 require("firebase/auth");
@@ -48,6 +49,14 @@ if (process.env.GENERATE_PEER_PORT == "true") {
 }
 
 const PORT = process.env.PORT || PEER_PORT || DEFAULT_PORT;
+
+const imgURLs = [
+  "https://dumielauxepices.net/sites/default/files/profile-clipart-profile-icon-728502-3571937.png",
+  "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQy08cK8wogTcvUJYvty4hAPwvKxTIJEqneUkNc3r4CBLkroZyn",
+  "https://png.pngtree.com/svg/20170921/5d57af529f.svg",
+  "https://image.flaticon.com/icons/png/512/194/194915.png",
+  "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ02t10e803wAb6yvCxp94Sv9XxVMtqOFDganij2UVcDK4uqUNB"
+];
 
 app.use((req, res, next) => {
   res.setHeader("Access-Control-Allow-Origin", "*");
@@ -159,12 +168,61 @@ app.get("/supcoin/transactions", (req, res) => {
     });
 });
 
+// app.get("/supcoin/transactions", (req, res) => {
+//   let transactions = [];
+//   db.collection("transactions")
+//     .get()
+//     .then(ref => {
+//       ref.docs.map(doc => {
+//         transactions.push(doc.data());
+//       });
+//       console.log("Log: ref", transactions);
+//       res.send(transactions);
+//     })
+//     .catch(err => {
+//       console.error(err);
+//     });
+// });
+
 app.post("/supcoin/login", (req, res) => {
   const { email, password } = req.body;
   firebase
     .auth()
     .signInWithEmailAndPassword(email, password)
     .then(user => {
+      res.json(user.user);
+    })
+    .catch(err => {
+      res.json(err);
+    });
+});
+
+app.post("/supcoin/signup", (req, res) => {
+  const { email, password } = req.body;
+  let wallet = new Wallet();
+  firebase
+    .auth()
+    .createUserWithEmailAndPassword(email, password)
+    .then(user => {
+      db.collection("wallets")
+        .doc(wallet.publicKey.toString())
+        .set({
+          email: email,
+          address: wallet.publicKey,
+          imgURl: _.sample(imgURLs)
+        })
+        .then(() => {
+          admin
+            .database()
+            .ref("wallets")
+            .child(wallet.publicKey.toString())
+            .set({
+              balance: wallet.balance
+            });
+        })
+        .catch(err => {
+          res.json(err);
+        });
       res.json(user.user);
     })
     .catch(err => {
@@ -277,15 +335,14 @@ io.on("disconnect", () => {
 http.listen(PORT, () => {
   console.log("Log: setNode -> connectedNode", { wallet });
   console.info(`Listening on port ${PORT}`);
-  setNode(PORT);
+  !isDevelopment ? setNode(PORT) : () => console.log("is development mode");
   if (PORT !== DEFAULT_PORT) {
     syncNodes();
   }
 });
 
 process.on("SIGINT", () => {
-  removeNode();
-  // console.log("Log: nodes", node);
+  !isDevelopment ? removeNode() : () => console.log("is development mode");
   process.exit();
 });
 
