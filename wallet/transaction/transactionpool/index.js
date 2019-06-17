@@ -25,10 +25,11 @@ class TransactionPool {
     );
   }
 
-  validateTransactions() {
-    return Object.values(this.transactionMap).filter(transaction =>
-      Transaction.validateTransaction(transaction)
-    );
+  validTransactions() {
+    return Object.values(this.transactionMap).filter(transaction => {
+      Transaction.validTransaction(transaction);
+      Transaction.saveTransaction(transaction);
+    });
   }
 
   clearBlockchainTransactions({ chain }) {

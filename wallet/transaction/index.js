@@ -1,4 +1,5 @@
 const uuid = require("uuid/v1");
+const { db } = require("../../db/firebase");
 const { verifySignature } = require("../../utils");
 const { REWARD_INPUT, MINING_REWARD } = require("../../config");
 
@@ -15,7 +16,7 @@ class Transaction {
     const outputMap = {};
 
     outputMap[recipient] = amount;
-    outputMap[senderWallet.publicKey] = senderWallet.balance - parseInt(amount);
+    outputMap[senderWallet.publicKey] = senderWallet.balance - amount;
 
     return outputMap;
   }
@@ -46,7 +47,22 @@ class Transaction {
     this.input = this.createInput({ senderWallet, outputMap: this.outputMap });
   }
 
-  static validateTransaction(transaction) {
+  getTransactionsList() {
+    return this.transactionList;
+  }
+
+  static saveTransaction(transaction) {
+    db.collection("transactions")
+      .add({ transaction: JSON.stringify(transaction) })
+      .then(ref => {
+        console.log("Log: saveTransaction -> ref", ref.id);
+      })
+      .catch(err => {
+        console.log("Log: saveTransaction -> err", err);
+      });
+  }
+
+  static validTransaction(transaction) {
     const {
       input: { address, amount, signature },
       outputMap

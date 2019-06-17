@@ -132,7 +132,7 @@ describe("Blockchain", () => {
     });
   });
 
-  describe("validateTransactionData()", () => {
+  describe("validTransactionData()", () => {
     let transaction, rewardTransaction, wallet;
 
     beforeEach(() => {
@@ -151,7 +151,7 @@ describe("Blockchain", () => {
         newChain.addBlock({ data: [transaction, rewardTransaction] });
 
         expect(
-          blockchain.validateTransactionData({ chain: newChain.chain })
+          blockchain.validTransactionData({ chain: newChain.chain })
         ).toBe(true);
         expect(errorMock).not.toHaveBeenCalled();
       });
@@ -164,7 +164,7 @@ describe("Blockchain", () => {
         });
 
         expect(
-          blockchain.validateTransactionData({ chain: newChain.chain })
+          blockchain.validTransactionData({ chain: newChain.chain })
         ).toBe(false);
         expect(errorMock).toHaveBeenCalled();
       });
@@ -178,7 +178,7 @@ describe("Blockchain", () => {
           newChain.addBlock({ data: [transaction, rewardTransaction] });
 
           expect(
-            blockchain.validateTransactionData({ chain: newChain.chain })
+            blockchain.validTransactionData({ chain: newChain.chain })
           ).toBe(false);
           expect(errorMock).toHaveBeenCalled();
         });
@@ -191,7 +191,7 @@ describe("Blockchain", () => {
           newChain.addBlock({ data: [transaction, rewardTransaction] });
 
           expect(
-            blockchain.validateTransactionData({ chain: newChain.chain })
+            blockchain.validTransactionData({ chain: newChain.chain })
           ).toBe(false);
           expect(errorMock).toHaveBeenCalled();
         });
@@ -220,7 +220,7 @@ describe("Blockchain", () => {
         newChain.addBlock({ data: [evilTransaction, rewardTransaction] });
 
         expect(
-          blockchain.validateTransactionData({ chain: newChain.chain })
+          blockchain.validTransactionData({ chain: newChain.chain })
         ).toBe(false);
         expect(errorMock).toHaveBeenCalled();
       });
@@ -233,7 +233,7 @@ describe("Blockchain", () => {
         });
 
         expect(
-          blockchain.validateTransactionData({ chain: newChain.chain })
+          blockchain.validTransactionData({ chain: newChain.chain })
         ).toBe(false);
         expect(errorMock).toHaveBeenCalled();
       });

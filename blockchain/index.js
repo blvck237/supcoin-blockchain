@@ -30,7 +30,7 @@ class Blockchain {
       return;
     }
 
-    if (validTransactions && !this.validateTransactionData({ chain })) {
+    if (validTransactions && !this.validTransactionData({ chain })) {
       console.error("The incoming chain has invalid data");
       return;
     }
@@ -56,13 +56,14 @@ class Blockchain {
     return true;
   }
 
-  validateTransactionData({ chain }) {
+  validTransactionData({ chain }) {
     for (let i = 1; i < chain.length; i++) {
       const block = chain[i];
       const transactionSet = new Set();
       let rewardTransactionCount = 0;
 
       for (let transaction of block.data) {
+        console.log("Log: validTransactionData -> transaction", transaction)
         if (transaction.input.address === REWARD_INPUT.address) {
           rewardTransactionCount += 1;
 
@@ -76,7 +77,7 @@ class Blockchain {
             return false;
           }
         } else {
-          if (!Transaction.validateTransaction(transaction)) {
+          if (!Transaction.validTransaction(transaction)) {
             console.error("Invalid transaction");
             return false;
           }

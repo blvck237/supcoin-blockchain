@@ -1,7 +1,6 @@
 const Transaction = require("./transaction");
 const { INITIAL_BALANCE } = require("../config");
 const { ec, cryptoHash } = require("../utils");
-
 class Wallet {
   constructor() {
     this.balance = INITIAL_BALANCE;
@@ -54,7 +53,9 @@ class Wallet {
       }
     }
 
-    return hasConductedTransaction ? outputsTotal: INITIAL_BALANCE + outputsTotal;
+    return hasConductedTransaction
+      ? outputsTotal
+      : INITIAL_BALANCE + outputsTotal;
   }
 }
 

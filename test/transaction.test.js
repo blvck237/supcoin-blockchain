@@ -61,7 +61,7 @@ describe("Transaction", () => {
     });
   });
 
-  describe("validateTransaction()", () => {
+  describe("validTransaction()", () => {
     let errorMock;
 
     beforeEach(() => {
@@ -72,7 +72,7 @@ describe("Transaction", () => {
 
     describe("when the transaction is valid", () => {
       it("returns true", () => {
-        expect(Transaction.validateTransaction(transaction)).toBe(true);
+        expect(Transaction.validTransaction(transaction)).toBe(true);
       });
     });
 
@@ -81,7 +81,7 @@ describe("Transaction", () => {
         it("returns false and logs an error", () => {
           transaction.outputMap[senderWallet.publicKey] = 999999;
 
-          expect(Transaction.validateTransaction(transaction)).toBe(false);
+          expect(Transaction.validTransaction(transaction)).toBe(false);
           expect(errorMock).toHaveBeenCalled();
         });
       });
@@ -90,7 +90,7 @@ describe("Transaction", () => {
         it("returns false and logs an error", () => {
           transaction.input.signature = new Wallet().sign("data");
 
-          expect(Transaction.validateTransaction(transaction)).toBe(false);
+          expect(Transaction.validTransaction(transaction)).toBe(false);
           expect(errorMock).toHaveBeenCalled();
         });
       });

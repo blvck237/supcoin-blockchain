@@ -22,11 +22,11 @@ const { mongoose } = require("./db/mongodb");
 const isDevelopment = process.env.ENV === "development";
 const REDIS_URL = isDevelopment
   ? "redis://127.0.0.1:6379"
-  : "redis://h:p05f9a274bd0e2414e52cb9516f8cbcead154d7d61502d32d9750180836a7cc05@ec2-34-225-229-4.compute-1.amazonaws.com:19289";
+  : "redis://h:pacd69ecdf84df9fe8ecfcb756525d9145707d6705494b17673082ba9d7f97308@ec2-52-1-169-125.compute-1.amazonaws.com:10109";
 const blockchain = new Blockchain();
 const node = new Node();
 const transactionPool = new TransactionPool();
-const pubsub = new PubSub({ blockchain, transactionPool, nodes: node });
+const pubsub = new PubSub({ blockchain, transactionPool, redisURL: REDIS_URL });
 const wallet = new Wallet();
 const transactionMiner = new TransactionMiner({
   blockchain,
@@ -47,7 +47,7 @@ if (process.env.GENERATE_PEER_PORT == "true") {
   PEER_PORT = DEFAULT_PORT + Math.ceil(Math.random() * 1000);
 }
 
-const PORT = PEER_PORT || DEFAULT_PORT;
+const PORT = process.env.PORT || PEER_PORT || DEFAULT_PORT;
 
 app.use((req, res, next) => {
   res.setHeader("Access-Control-Allow-Origin", "*");
@@ -78,15 +78,15 @@ app.post("/supcoin/mineblock", (req, res) => {
 });
 
 app.post("/supcoin/transact", (req, res) => {
-  const { amount, recipient } = req.body;
+  const { senderWallet, amount, recipient } = req.body;
 
   let transaction = transactionPool.existingTransaction({
-    inputAddress: wallet.publicKey
+    inputAddress: senderWallet.publicKey
   });
 
   try {
     if (transaction) {
-      transaction.update({ senderWallet: wallet, recipient, amount });
+      transaction.update({ senderWallet: senderWallet, recipient, amount });
     } else {
       transaction = wallet.createTransaction({ recipient, amount });
     }
@@ -106,7 +106,7 @@ app.get("/supcoin/transaction-pool-map", (req, res) => {
 app.get("/supcoin/availablenodes", (req, res) => {
   console.log("Log: nodes");
 
-  res.json( onlineNodes );
+  res.json(onlineNodes);
 });
 
 app.get("/supcoin/mine-transaction", (req, res) => {
@@ -115,10 +115,27 @@ app.get("/supcoin/mine-transaction", (req, res) => {
   res.redirect("/supcoin/blocks");
 });
 
+app.get("/supcoin/create-wallet", (req, res) => {
+  let wallet = new Wallet();
+  res.json(wallet);
+});
+
+// post
 app.get("/supcoin/wallet-info", (req, res) => {
   const address = wallet.publicKey;
+  const { add } = req.body;
   res.json({
     address,
+    balance: Wallet.calculateBalance({
+      chain: blockchain,
+      address
+    })
+  });
+});
+
+app.get("supcoin/get-balance", (req, res) => {
+  const address = req.body;
+  res.json({
     balance: Wallet.calculateBalance({
       chain: blockchain,
       address
@@ -148,12 +165,10 @@ app.post("/supcoin/login", (req, res) => {
     .auth()
     .signInWithEmailAndPassword(email, password)
     .then(user => {
-      console.info("ok");
-      res.json(user);
+      res.json(user.user);
     })
     .catch(err => {
       res.json(err);
-      console.log("Log: err", err);
     });
 });
 
@@ -172,6 +187,20 @@ app.get("/supcoin/facebookLogin", (req, res) => {
       console.log("Log: err", err);
     });
 });
+
+const getWalletInfo = () => {
+  request(
+    { url: `${ROOT_NOOD_ADDRESS}/supcoin/wallet-info` },
+    (error, response, body) => {
+      if (!error && response.statusCode === 200) {
+        const wallet = response.data;
+        const rootChain = JSON.parse(body);
+        console.log("Log: getWalletInfo -> rootChain", rootChain);
+        // return rootChain;
+      }
+    }
+  );
+};
 
 const syncNodes = () => {
   request(
@@ -216,7 +245,6 @@ const setNode = () => {
     .database()
     .ref("nodes")
     .push(PORT);
-  console.log("Log: setNode -> connectedNode", connectedNode.key);
 };
 
 const getNodes = () => {
@@ -247,6 +275,7 @@ io.on("disconnect", () => {
 });
 
 http.listen(PORT, () => {
+  console.log("Log: setNode -> connectedNode", { wallet });
   console.info(`Listening on port ${PORT}`);
   setNode(PORT);
   if (PORT !== DEFAULT_PORT) {
@@ -259,3 +288,5 @@ process.on("SIGINT", () => {
   // console.log("Log: nodes", node);
   process.exit();
 });
+
+// Add set node and remove after

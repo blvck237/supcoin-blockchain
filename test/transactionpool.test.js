@@ -36,7 +36,7 @@ describe("TransactionPool", () => {
     });
   });
 
-  describe("validateTransactions()", () => {
+  describe("validTransactions()", () => {
     let validTransactions, errorMock;
 
     beforeEach(() => {
@@ -64,11 +64,11 @@ describe("TransactionPool", () => {
     });
 
     it("returns valid transaction", () => {
-      expect(transactionPool.validateTransactions()).toEqual(validTransactions);
+      expect(transactionPool.validTransactions()).toEqual(validTransactions);
     });
 
     it("logs errors for the invalid transactions", () => {
-      transactionPool.validateTransactions();
+      transactionPool.validTransactions();
       expect(errorMock).toHaveBeenCalled();
     });
   });
