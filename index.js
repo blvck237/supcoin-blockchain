@@ -99,6 +99,7 @@ app.post("/supcoin/transact", (req, res) => {
     } else {
       transaction = wallet.createTransaction({ recipient, amount });
     }
+    updateWallet(senderWallet.publicKey, senderWallet);
   } catch (error) {
     return res.status(400).json({ type: "error", message: error.message });
   }
@@ -120,7 +121,6 @@ app.get("/supcoin/availablenodes", (req, res) => {
 
 app.get("/supcoin/mine-transaction", (req, res) => {
   transactionMiner.mineTransactions();
-
   res.redirect("/supcoin/blocks");
 });
 
@@ -204,12 +204,18 @@ app.post("/supcoin/signup", (req, res) => {
     .auth()
     .createUserWithEmailAndPassword(email, password)
     .then(user => {
+      var currentUser = firebase.auth().currentUser;
+      currentUser.updateProfile({
+        displayName: wallet.publicKey.toString(),
+        photoURL: _.sample(imgURLs)
+      });
       db.collection("wallets")
         .doc(wallet.publicKey.toString())
         .set({
           email: email,
           address: wallet.publicKey,
-          imgURl: _.sample(imgURLs)
+          imgURl: _.sample(imgURLs),
+          wallet: JSON.stringify(wallet)
         })
         .then(() => {
           admin
@@ -313,6 +319,24 @@ const getNodes = () => {
       snapshot.forEach(node => {
         onlineNodes.push(node.val());
       });
+    });
+};
+
+const updateWallet = (address, wallet) => {
+  admin
+    .database()
+    .ref("wallets")
+    .child(address.toString())
+    .update({ balance: wallet.balance })
+    .then(() => {
+      console.log("success")
+      db.collection("wallets")
+        .doc(address)
+        .update({ wallet: JSON.stringify(wallet) })
+        .catch(err => console.log(err));
+    })
+    .catch(err => {
+      console.log({ err });
     });
 };
 
